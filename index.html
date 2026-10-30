@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#111111">
+  <title>Cartão Fidelidade | Bar e Barber 27</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      padding: 24px 16px;
+      min-height: 100vh;
+      background: #111;
+      color: #f5f0e6;
+      font-family: Arial, sans-serif;
+    }
+
+    .card {
+      max-width: 460px;
+      margin: 20px auto;
+      padding: 28px 22px;
+      border: 1px solid #a88745;
+      border-radius: 18px;
+      background: linear-gradient(145deg, #24211b, #101010);
+      box-shadow: 0 12px 35px #0009;
+    }
+
+    .brand {
+      text-align: center;
+      color: #d6b66e;
+      font-size: 13px;
+      letter-spacing: 4px;
+      margin-bottom: 12px;
+    }
+
+    h1 {
+      text-align: center;
+      color: #e5c77e;
+      font-family: Georgia, serif;
+      font-size: 30px;
+      margin: 8px 0;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #c8bfae;
+      font-size: 13px;
+      margin-bottom: 28px;
+    }
+
+    .line {
+      border: 0;
+      border-top: 1px solid #66532e;
+      margin: 22px 0;
+    }
+
+    .client {
+      text-align: center;
+      font-size: 21px;
+      font-weight: bold;
+      margin: 18px 0;
+    }
+
+    .progress-title {
+      text-align: center;
+      color: #d6b66e;
+      font-size: 14px;
+      margin-bottom: 16px;
+    }
+
+    .stamps {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 13px;
+      justify-items: center;
+    }
+
+    .stamp {
+      width: 48px;
+      height: 48px;
+      display: grid;
+      place-items: center;
+      border: 1px solid #8d713b;
+      border-radius: 50%;
+      color: #a88a4e;
+      font-size: 19px;
+      font-weight: bold;
+    }
+
+    .stamp.done {
+      background: #b38b3d;
+      color: #17130c;
+      border-color: #e5c77e;
+    }
+
+    .count {
+      text-align: center;
+      font-size: 18px;
+      margin: 22px 0;
+    }
+
+    .benefit {
+      padding: 17px 12px;
+      border: 1px solid #b38b3d;
+      border-radius: 12px;
+      text-align: center;
+      color: #e5c77e;
+      font-weight: bold;
+      line-height: 1.5;
+    }
+
+    .note {
+      text-align: center;
+      color: #aaa;
+      font-size: 12px;
+      margin-top: 22px;
+      line-height: 1.6;
+    }
+
+    #message {
+      text-align: center;
+      color: #e5c77e;
+      line-height: 1.6;
+      padding: 20px 5px;
+    }
+
+    .footer {
+      text-align: center;
+      color: #8f8064;
+      font-size: 11px;
+      margin-top: 25px;
+      letter-spacing: 2px;
+    }
+  </style>
+</head>
+
+<body>
+  <main class="card">
+    <div class="brand">BARBEARIA • PORTO ALEGRE</div>
+    <h1>BAR E BARBER 27</h1>
+    <div class="subtitle">CARTÃO FIDELIDADE</div>
+
+    <hr class="line">
+
+    <div id="message">Carregando cartão...</div>
+
+    <section id="content" hidden>
+      <div class="client" id="clientName"></div>
+
+      <div class="progress-title">
+        SEUS CORTES PAGOS
+      </div>
+
+      <div class="stamps" id="stamps"></div>
+
+      <div class="count" id="count"></div>
+
+      <div class="benefit" id="benefit"></div>
+
+      <div class="note">
+        A cada 10 cortes pagos, você ganha<br>
+        1 CORTE COMPLETO GRÁTIS!
+      </div>
+    </section>
+
+    <div class="footer">
+      BAR E BARBER 27 • FIDELIDADE
+    </div>
+  </main>
+
+  <script>
+    const SUPABASE_URL =
+      'https://qrsmjbklyfviczmiftkl.supabase.co';
+
+    const SUPABASE_KEY =
+      'sb_publishable_X9TJdzTxmLB7vb7BB44k-Q_QR0_wZjl';
+
+    const db = window.supabase.createClient(
+      SUPABASE_URL,
+      SUPABASE_KEY
+    );
+
+    async function loadCard() {
+      const message = document.getElementById('message');
+      const content = document.getElementById('content');
+
+      const token = new URLSearchParams(
+        window.location.search
+      ).get('token');
+
+      if (!token) {
+        message.textContent =
+          'Seu cartão será disponibilizado pela equipe da Bar e Barber 27.';
+        return;
+      }
+
+      const uuidPattern =
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+      if (!uuidPattern.test(token)) {
+        message.textContent = 'Link de cartão inválido.';
+        return;
+      }
+
+      const { data, error } = await db.rpc(
+        'get_loyalty_card',
+        { p_card_token: token }
+      );
+
+      if (error || !data || data.length === 0) {
+        message.textContent =
+          'Não foi possível localizar seu cartão. Procure a equipe da barbearia.';
+        return;
+      }
+
+      const client = data[0];
+      const cuts = Number(client.cuts_count);
+
+      document.getElementById('clientName').textContent =
+        client.client_name;
+
+      const stamps = document.getElementById('stamps');
+
+      for (let i = 1; i <= 10; i++) {
+        const stamp = document.createElement('div');
+        stamp.className = 'stamp' + (i <= cuts ? ' done' : '');
+        stamp.textContent = i <= cuts ? '✓' : i;
+        stamps.appendChild(stamp);
+      }
+
+      document.getElementById('count').textContent =
+        `${cuts} de 10 cortes pagos`;
+
+      document.getElementById('benefit').textContent =
+        client.free_cut_available
+          ? 'PARABÉNS! SEU CORTE COMPLETO GRÁTIS ESTÁ DISPONÍVEL!'
+          : `Faltam ${10 - cuts} corte(s) para ganhar seu benefício.`;
+
+      content.hidden = false;
+      message.hidden = true;
+    }
+
+    loadCard();
+  </script>
+</body>
+</html>
