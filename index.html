@@ -159,6 +159,23 @@ async function loadClients(){
     link.textContent="Copiar link do cartão";
     link.onclick=()=>navigator.clipboard.writeText(cardLink)
       .then(()=>msg("Link copiado!"));
+    const whatsapp=document.createElement("button");
+whatsapp.className="secondary";
+whatsapp.textContent="Enviar cartão pelo WhatsApp";
+
+const numero=c.phone.replace(/\D/g,"");
+const numeroWhatsApp=numero.startsWith("55") ? numero : "55"+numero;
+
+const mensagem=encodeURIComponent(
+  `Olá, ${c.name}! 💈 Seu cartão fidelidade da Bar e Barber 27 está disponível. Acompanhe seus cortes e seu benefício neste link: ${cardLink}`
+);
+
+whatsapp.onclick=()=>{
+  window.open(
+    `https://wa.me/${numeroWhatsApp}?text=${mensagem}`,
+    "_blank"
+  );
+};
     const paid=document.createElement("button");
     paid.textContent="Registrar corte pago";
     paid.disabled=c.cuts_count>=10;
@@ -168,7 +185,7 @@ async function loadClients(){
     free.textContent="Resgatar corte grátis";
     free.disabled=c.cuts_count!==10;
     free.onclick=()=>redeem(c.id);
-    item.append(name,info,link,paid,free);
+    item.append(name,info,link,whatsapp,paid,free);
     $("clients").appendChild(item);
   });
 }
