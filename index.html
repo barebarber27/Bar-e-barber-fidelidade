@@ -229,6 +229,7 @@ alert("Cheguei até a etapa de atualização!");
   })
   .eq("id",id)
   .select("id,name,phone");
+  alert(error ? "ERRO: "+error.message : "Registros alterados: "+(data?.length||0));
 
   if(error){
     msg("Não foi possível editar: "+error.message);
