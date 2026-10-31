@@ -234,6 +234,10 @@ async function editClient(id,currentName,currentPhone){
     msg("Não foi possível editar: "+error.message);
     return;
   }
+  if(!data || data.length===0){
+  msg("Nenhum cadastro foi alterado. Verifique a autorização.");
+  return;
+  }
 
   msg("Cadastro atualizado com sucesso!");
   await loadClients();
