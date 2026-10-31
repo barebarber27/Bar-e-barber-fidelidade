@@ -214,7 +214,7 @@ async function editClient(id,currentName,currentPhone){
 
   const phone=prompt("Editar WhatsApp com DDD:",currentPhone);
   if(phone===null)return;
-
+alert("Cheguei até a etapa de atualização!");
   if(!name.trim() || !phone.trim()){
     msg("Nome e WhatsApp não podem ficar vazios.");
     return;
