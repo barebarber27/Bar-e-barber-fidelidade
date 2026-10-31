@@ -151,8 +151,10 @@ async function loadStaff(){
 
 async function loadClients(){
   const {data,error}=await sb.from("loyalty_clients")
-    .select("id,name,phone,cuts_count,card_token")
+        .select("id,name,phone,cuts_count,card_token,is_active")
     .order("name");
+
+  
   if(error){msg("Erro ao carregar clientes: "+error.message);return;}
   $("clients").innerHTML="";
   data.forEach(c=>{
@@ -185,21 +187,74 @@ whatsapp.onclick=()=>{
     "_blank"
   );
 };
+        const edit=document.createElement("button");
+    edit.className="secondary";
+    edit.textContent="Editar cadastro";
+    edit.onclick=()=>editClient(c.id,c.name,c.phone);
+    const active=document.createElement("button");
+active.className="secondary";
+active.textContent=c.is_active?"Desativar cliente":"Reativar cliente";
+active.onclick=()=>toggleClientActive(c.id,c.is_active);
     const paid=document.createElement("button");
     paid.textContent="Registrar corte pago";
-    paid.disabled=c.cuts_count>=10;
+    paid.disabled=!c.is_active || c.cuts_count>=10;
     paid.onclick=()=>registerPaid(c.id);
     const free=document.createElement("button");
     free.className="secondary";
     free.textContent="Resgatar corte grátis";
-    free.disabled=c.cuts_count!==10;
+    free.disabled=!c.is_active || c.cuts_count!==10;
     free.onclick=()=>redeem(c.id);
-    item.append(name,info,link,whatsapp,paid,free);
+    item.append(name,info,link,whatsapp,edit,active,paid,free);
     $("clients").appendChild(item);
   });
 }
+async function editClient(id,currentName,currentPhone){
+  const name=prompt("Editar nome do cliente:",currentName);
+  if(name===null)return;
 
-async function registerClient(){
+  const phone=prompt("Editar WhatsApp com DDD:",currentPhone);
+  if(phone===null)return;
+
+  if(!name.trim() || !phone.trim()){
+    msg("Nome e WhatsApp não podem ficar vazios.");
+    return;
+  }
+
+  msg("Salvando alterações...");
+
+  const {error}=await sb.from("loyalty_clients")
+    .update({
+      name:name.trim(),
+      phone:phone.trim()
+    })
+    .eq("id",id);
+
+  if(error){
+    msg("Não foi possível editar: "+error.message);
+    return;
+  }
+
+  msg("Cadastro atualizado com sucesso!");
+  await loadClients();
+}
+async function toggleClientActive(id,isActive){
+  const action=isActive?"desativar":"reativar";
+
+  if(!confirm("Deseja "+action+" este cliente?"))return;
+
+  const {error}=await sb.from("loyalty_clients")
+    .update({is_active:!isActive})
+    .eq("id",id);
+
+  if(error){
+    msg("Erro ao alterar cadastro: "+error.message);
+    return;
+  }
+
+  msg("Cadastro atualizado com sucesso!");
+  await loadClients();
+}
+  async function registerClient(){
   const name=$("newName").value.trim();
   const phone=$("newPhone").value.trim();
   if(!name || !phone){msg("Informe nome e WhatsApp.");return;}
