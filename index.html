@@ -222,12 +222,13 @@ async function editClient(id,currentName,currentPhone){
 
   msg("Salvando alterações...");
 
-  const {error}=await sb.from("loyalty_clients")
-    .update({
-      name:name.trim(),
-      phone:phone.trim()
-    })
-    .eq("id",id);
+  const {data,error}=await sb.from("loyalty_clients")
+  .update({
+    name:name.trim(),
+    phone:phone.trim()
+  })
+  .eq("id",id)
+  .select("id,name,phone");
 
   if(error){
     msg("Não foi possível editar: "+error.message);
